@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sortable and Filterable Table</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+
+        h1 {
+            font-size: 24px;
+        }
+
+        .upload-container {
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            padding: 50px 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            width: 60%;
+            background-color: #f8fafc;
+            color: #4f6287;
+        }
+
+        .upload-container.dragging {
+            border-color: #0b79d0;
+        }
+
+        .upload-container>img {
+            width: 60px;
+        }
+
+        .file-button {
+            background-color: #0c41ad;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .file-button:hover {
+            background-color: #0056b3;
+        }
+
+        .error-message,
+        .success-message {
+            margin: 10px 0;
+            padding: 10px 20px;
+            color: #fff;
+            border-radius: 5px;
+            width: 25%;
+            margin: 8px 2px;
+            margin: auto;
+            top: 14%;
+            position: absolute;
+            left: 50%;
+
+            transform: translateX(-50%);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .show-message {
+            display: flex;
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-10px);
+        }
+
+        .error-message {
+            background-color: #dc3545;
+            justify-content: space-between;
+        }
+
+        .success-message {
+            background-color: #28a745;
+            justify-content: space-between;
+
+        }
+
+        table {
+            width: 75%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border-bottom: 1px solid #ccc;
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            cursor: pointer;
+        }
+
+        th.sort-asc::after {
+            content: " ▲";
+            color: gray;
+        }
+
+        th.sort-desc::after {
+            content: " ▼";
+            color: gray;
+
+        }
+
+        .filter-container {
+            display: flex;
+        }
+
+        .uploadParentContainer {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: left;
+            align-items: center;
+        }
+
+        .separatorOr {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            font-size: 14px;
+            color: #555;
+            margin: 5px 10px;
+        }
+
+        .separatorOr::before,
+        .separatorOr::after {
+            content: '';
+            display: block;
+            width: 40px;
+            height: 1px;
+            background-color: #ccc;
+            top: 50%;
+            margin: 5px;
+
+        }
+
+        thead {
+            background-color: #f8fafc;
+            color: #143b81;
+            border: 1px solid #e5edf4;
+        }
+
+        h1 {
+            margin-bottom: 4px;
+            color: #001e52;
+        }
+
+        .pText {
+            color: #8096b2;
+            margin-top: 0;
+        }
+
+        .pText2 {
+            color: #8096b2;
+        }
+
+        .statusTag {
+            background-color: #ccc;
+            border-radius: 15px;
+            padding: 5px 13px;
+            font-size: 15px;
+        }
+
+        .completed {
+            background-color: #eaf4f4;
+            color: #05968f;
+        }
+
+        .expired {
+            background-color: #fdedf3;
+            color: #dc4d8a;
+        }
+
+        .in_progress {
+            background-color: #e7e9f1;
+            color: #0e2b72;
+        }
+
+        .yet_to_start {
+            background-color: #eaf5fc;
+            color: #4bafe6;
+        }
+
+        .nameShortForm {
+            border-radius: 50%;
+            padding: 8px;
+            font-size: 13px;
+            margin-right: 8px;
+            color: #ffffff;
+        }
+
+        tr:nth-child(odd) .nameShortForm {
+            background-color: #c63532;
+        }
+
+        tr:nth-child(even) .nameShortForm {
+            background-color: #5c6cc0;
+        }
+
+        tr {
+            border: 1px solid #ccc;
+        }
+
+
+        td {
+            padding: 22px;
+            color: #4f6287;
+        }
+
+        .crossButton {
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        @media only screen and (max-width: 1024px) {
+            table {
+                width: 95%;
+            }
+
+
+            .error-message,
+            .success-message {
+                width: 50%;
+            }
+        }
+
+        .filterTagsContainer {
+
+            background-color: #f8fafc;
+            padding: 10px;
+            display: flex;
+            border-radius: 10px;
+            align-items: center;
+            margin: 10px auto;
+            display: none;
+
+        }
+
+        .tagStatus {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #4f6287;
+            padding: 6px 15px;
+            border-radius: 5px;
+            margin: 0 5px;
+        }
+
+        .tagStatus>p {
+            margin: 0 auto;
+        }
+
+        .clearBtn {
+            border: none;
+            outline: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin: 2px 10px;
+            color: #143b81;
+            background: none;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+
+        }
+
+
+        .filterContainerInput {
+            padding: 10px;
+            margin-right: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 300px;
+        }
+
+        .custom-dropdown {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            width: 200px;
+            display: none;
+        }
+
+        .clear-all {
+            margin-left: 20px;
+            background-color: #dc3545;
+            color: #fff;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .clear-all:hover {
+            background-color: #c82333;
+        }
+
+        .selected-filters {
+            margin-top: 10px;
+            display: none;
+        }
+
+        .selected-filters span {
+            background-color: #007bff;
+            color: #fff;
+            padding: 5px 10px;
+            margin-right: 5px;
+            border-radius: 5px;
+        }
+
+        #filterTagsParent {
+            display: flex;
+        }
+
+        #searchInput {
+            height: 25px;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            margin: 5px 10px;
+            color: #143b81;
+        }
+
+        .statusCheckbox {
+            margin: 10px;
+        }
+
+        .filterPin {
+            border: 1px solid #ccc;
+            width: 45px;
+            height: 45px;
+            text-align: center;
+            padding: 0;
+            border-radius: 5px;
+            margin: 0 10px;
+            cursor: pointer;
+
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+
+        }
+
+        .redDot {
+            position: absolute;
+            background-color: #dc3545;
+            border-radius: 50%;
+            width: 12px;
+            height: 12px;
+            top: -10%;
+            right: -10%;
+            display: none;
+        }
+
+
+        .filterPin>img {
+            width: 60%;
+        }
+
+        .active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Evaluation Table</h1>
+    <p class="pText">Candidate Evaluation Data</p>
+
+    <div class="uploadParentContainer">
+
+        <div class="upload-container" id="dropArea">
+            <img src="https://d22ueo28hfk252.cloudfront.net/Content/versioned/2.0.0.1/images/version4/promotion_october_24/zenrik_images/ws-17296199581486.png?v=1729619958"
+                alt="drag-icon">
+            Drag & Drop file here or
+            <input type="file" id="fileInput" accept=".json" style="display: none;" />
+        </div>
+
+        <p class="separatorOr">OR</p>
+        <button class="file-button" id="fileButton">Choose file from Computer</button>
+
+    </div>
+
+    <div class="error-message" id="errorMessage">Error: Invalid JSON format or file type!</div>
+    <div class="success-message" id="successMessage">JSON Uploaded successfully!</div>
+
+    <div class="filter-container">
+        <input class="filterContainerInput" type="text" id="searchInput" placeholder="Search by Name or Status">
+        <div class="filterPin">
+
+            <img src="https://d22ueo28hfk252.cloudfront.net/Content/versioned/2.0.0.1/images/version4/promotion_october_24/zenrik_images/vfdfs-17296709153541.png?v=1729670915"
+                alt="">
+            <div class="redDot"></div>
+        </div>
+
+        <div class="filter-container">
+
+            <div id="statusDropdown" class="custom-dropdown">
+                <div class="dropdown-box">
+                    <label><input type="checkbox" value="YET_TO_START" class="statusCheckbox"> Yet to Start</label>
+                    <label><input type="checkbox" value="IN_PROGRESS" class="statusCheckbox"> In Progress</label>
+                    <label><input type="checkbox" value="COMPLETED" class="statusCheckbox"> Completed</label>
+                    <label><input type="checkbox" value="EXPIRED" class="statusCheckbox"> Expired</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="selected-filters" id="selectedFilters"></div>
+    <div class="filterTagsContainer">
+        <div>
+            <p class="pText2">Evaluation Status:</p>
+        </div>
+        <div id="filterTagsParent">
+
+        </div>
+
+        <div>
+
+            <button class="clearBtn" id="clearAll">Clear All</button>
+        </div>
+    </div>
+
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th data-sort="name">Name</th>
+                <th data-sort="startDate">Task Start Date</th>
+                <th data-sort="evaluationStatus">Evaluation Status</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileButton = document.getElementById('fileButton');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const searchInput = document.getElementById('searchInput');
+        const filterStatus = document.getElementById('filterStatus');
+        const dataTable = document.getElementById('dataTable').querySelector('tbody');
+        const statusCheckboxes = document.querySelectorAll('.statusCheckbox');
+        const selectedFiltersDiv = document.getElementById('filterTagsParent');
+        const clearAllButton = document.getElementById('clearAll');
+
+        let jsonData = [];
+
+        fileButton.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', handleFile);
+        dropArea.addEventListener('dragover', event => {
+            event.preventDefault();
+            dropArea.classList.add('dragging');
+        });
+
+        dropArea.addEventListener('dragleave', () => dropArea.classList.remove('dragging'));
+
+        dropArea.addEventListener('drop', event => {
+            event.preventDefault();
+            dropArea.classList.remove('dragging');
+            if (event.dataTransfer.files.length) handleFile({ target: { files: event.dataTransfer.files } });
+        });
+
+        function handleFile(event) {
+            const file = event.target.files[0];
+            if (!file || file.type !== 'application/json') {
+                showErrorMessage('Invalid JSON format or file type!');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    jsonData = JSON.parse(e.target.result);
+                    populateTable(jsonData);
+                    showSuccessMessage('✅ JSON Uploaded successfully!');
+                } catch (error) {
+                    showErrorMessage('❗️ Error parsing JSON file!');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        document.querySelector('.filterPin').addEventListener('click', function () {
+            document.getElementById('statusDropdown').classList.toggle('active')
+
+        })
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const options = {
+                timeZone: 'Asia/Kolkata',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: true,
+                timeZoneName: 'short'
+            };
+            const formattedDate = new Intl.DateTimeFormat('en-US', options).format(date);
+            const formattedDateWithAt = formattedDate.replace(", ", " @ ");
+            return `${formattedDateWithAt} (GMT+5:30 Asia/Kolkata)`;
+        }
+
+        function formatEvaluationStatus(status) {
+            const formattedStatus = status.toLowerCase().replace(/_/g, ' ');
+            return formattedStatus.charAt(0).toUpperCase() + formattedStatus.slice(1);
+        }
+
+        function populateTable(data) {
+            dataTable.innerHTML = '';
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><span class="nameShortForm">${item.name.split(" ")[0].charAt(0)}${item.name.split(" ")[1].charAt(0)}</span> ${item.name}</td>
+                    <td>${formatDate(item.startDate)}</td>
+                    <td> <span class="statusTag ${item.evaluationStatus.toLowerCase()}">${formatEvaluationStatus(item.evaluationStatus)}</span></td>
+                `;
+                dataTable.appendChild(row);
+            });
+        }
+
+        function showErrorMessage(message) {
+            errorMessage.innerHTML = message + `<span class="crossButton" onclick="closePopup(this)">&#xd7;</span>`;
+            errorMessage.classList.add('show-message')
+        }
+
+        function showSuccessMessage(message) {
+            successMessage.innerHTML = message + `<span class="crossButton" onclick="closePopup(this)">&#xd7;</span>`;
+            successMessage.classList.add('show-message')
+        }
+
+        function closePopup(elem) {
+            // console.log(elem.parentElement);
+            elem.parentElement.classList.remove('show-message')
+        }
+
+
+        let currentSortColumn = null;
+        let isAscending = true;
+
+        function sortTable(column) {
+            if (currentSortColumn === column) {
+                isAscending = !isAscending;
+            } else {
+                currentSortColumn = column;
+                isAscending = true;
+            }
+
+            jsonData.sort((a, b) => {
+                if (a[column] > b[column]) return isAscending ? 1 : -1;
+                if (a[column] < b[column]) return isAscending ? -1 : 1;
+                return 0;
+            });
+
+            populateTable(jsonData);
+            updateArrows();
+        }
+
+        function updateArrows() {
+            document.querySelectorAll("th").forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
+            const currentTh = document.querySelector(`th[data-sort="${currentSortColumn}"]`);
+            if (currentTh) {
+                currentTh.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+            }
+        }
+
+        document.querySelectorAll('th').forEach(header => {
+            header.addEventListener('click', () => sortTable(header.getAttribute('data-sort')));
+        });
+
+
+
+        function filterTable() {
+            const searchValue = searchInput.value.toLowerCase();
+            const statusValue = filterStatus.value;
+            console.log(formatEvaluationStatus(statusValue));
+            document.getElementById('tagStatus').innerText = formatEvaluationStatus(statusValue);
+
+            const filteredData = jsonData.filter(item => {
+                const matchesSearch = item.name.toLowerCase().includes(searchValue) ||
+                    item.evaluationStatus.toLowerCase().includes(searchValue);
+                const matchesStatus = statusValue === 'All' || item.evaluationStatus === statusValue;
+                return matchesSearch && matchesStatus;
+            });
+
+            populateTable(filteredData);
+        }
+
+
+        searchInput.addEventListener('input', filterTable);
+        statusCheckboxes.forEach(checkbox => checkbox.addEventListener('change', filterTable));
+        clearAllButton.addEventListener('click', clearAllFilters);
+
+        function filterTable() {
+            const searchText = searchInput.value.toLowerCase();
+            const selectedStatuses = Array.from(statusCheckboxes)
+                .filter(checkbox => checkbox.checked)
+                .map(checkbox => checkbox.value);
+
+            const filteredData = jsonData.filter(row => {
+                const matchesSearch = row.name.toLowerCase().includes(searchText) || row.evaluationStatus.toLowerCase().includes(searchText);
+                const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(row.evaluationStatus);
+                return matchesSearch && matchesStatus;
+            });
+
+            populateTable(filteredData);
+            updateSelectedFiltersDisplay(selectedStatuses);
+        }
+
+        function updateSelectedFiltersDisplay(selectedStatuses) {
+            selectedFiltersDiv.innerHTML = '';
+            if (selectedStatuses.length) {
+                selectedFiltersDiv.style.display = 'flex';
+                document.querySelector('.filterTagsContainer').style.display = 'flex';
+                document.querySelector('.redDot').classList.add('active')
+                selectedStatuses.forEach(status => {
+                    const tagStatusDiv = document.createElement('div');
+                    tagStatusDiv.classList.add('tagStatus');
+
+                    const statusParagraph = document.createElement('p');
+                    statusParagraph.id = 'tagStatus';
+                    statusParagraph.textContent = formatEvaluationStatus(status);
+
+                    tagStatusDiv.appendChild(statusParagraph);
+
+                    selectedFiltersDiv.appendChild(tagStatusDiv);
+                });
+            } else {
+                selectedFiltersDiv.style.display = 'none';
+                document.querySelector('.filterTagsContainer').style.display = 'none';
+                document.querySelector('.redDot').classList.remove('active')
+            }
+        }
+
+        function clearAllFilters() {
+            searchInput.value = '';
+            statusCheckboxes.forEach(checkbox => checkbox.checked = false);
+            filterTable();
+        }
+
+    </script>
+</body>
+
+</html>
